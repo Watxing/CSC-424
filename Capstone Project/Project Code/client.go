@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"errors"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 )
@@ -23,6 +24,11 @@ func (c *client) insert() error {
 		return errors.New("Name is not set")
 	} else if c.pass == "" {
 		return errors.New("pass is not set")
+	}
+	
+	hashed, err := bcrypt.GenerateFromPassword([]byte(c.pass), bcrypt.DefaultCost)
+	if err != nil {
+		return err
 	}
 
 	_, err := db.Exec("INSERT INTO client (name, pass) VALUES ($1, $2)", c.Name, c.pass)
@@ -51,7 +57,8 @@ func (c *client) passCorrect() error {
 		return err
 	}
 
-	if c.pass != pass {
+	err = bcrypt.CompareHashAndPassword([]byte(pass), []byte(c.pass))
+	if err != nil {
 		return errors.New("invalid pass")
 	}
 
